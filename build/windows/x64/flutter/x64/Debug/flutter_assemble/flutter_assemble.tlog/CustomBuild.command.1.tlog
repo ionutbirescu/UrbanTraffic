@@ -1,0 +1,28 @@
+^D:\URBANTRAFFIC\APP\NOISE_MAPPER\BUILD\WINDOWS\X64\CMAKEFILES\40A66CC5F9F5B4984872509486B9E428\FLUTTER_WINDOWS.DLL.RULE
+setlocal
+D:\ProgramFiles\MVisualProduct\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E env FLUTTER_ROOT=D:\ProgramFiles\flutter PROJECT_DIR=D:\UrbanTraffic\app\noise_mapper FLUTTER_ROOT=D:\ProgramFiles\flutter FLUTTER_EPHEMERAL_DIR=D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral PROJECT_DIR=D:\UrbanTraffic\app\noise_mapper FLUTTER_TARGET=D:\UrbanTraffic\app\noise_mapper\lib\main.dart DART_DEFINES=Zmx1dHRlci5pbnNwZWN0b3Iuc3RydWN0dXJlZEVycm9ycz10cnVl,RkxVVFRFUl9WRVJTSU9OPTMuNDEuNg==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049ZGI1MGUyMDE2OA==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049NDI1Y2ZiNTRkMA==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My4xMS40 DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=D:\UrbanTraffic\app\noise_mapper\.dart_tool\package_config.json D:/ProgramFiles/flutter/packages/flutter_tools/bin/tool_backend.bat windows-x64 Debug
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^D:\URBANTRAFFIC\APP\NOISE_MAPPER\BUILD\WINDOWS\X64\CMAKEFILES\102737BB9490A0EBC64A8D8162542B0D\FLUTTER_ASSEMBLE.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^D:\URBANTRAFFIC\APP\NOISE_MAPPER\WINDOWS\FLUTTER\CMAKELISTS.TXT
+setlocal
+D:\ProgramFiles\MVisualProduct\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -SD:/UrbanTraffic/app/noise_mapper/windows -BD:/UrbanTraffic/app/noise_mapper/build/windows/x64 --check-stamp-file D:/UrbanTraffic/app/noise_mapper/build/windows/x64/flutter/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
