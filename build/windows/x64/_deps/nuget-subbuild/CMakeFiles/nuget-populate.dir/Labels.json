@@ -1,0 +1,49 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/nuget-populate"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/d61f0b3d41e187f24ce1500cf1a8556d/nuget-populate.rule"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/ccb6178ebbe036bb1afb50a0b341dd00/nuget-populate-complete.rule"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/1c6014bbb8cde113fca14b1e41ba8ace/nuget-populate-build.rule"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/1c6014bbb8cde113fca14b1e41ba8ace/nuget-populate-configure.rule"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/1c6014bbb8cde113fca14b1e41ba8ace/nuget-populate-copyfile.rule"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/1c6014bbb8cde113fca14b1e41ba8ace/nuget-populate-download.rule"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/1c6014bbb8cde113fca14b1e41ba8ace/nuget-populate-install.rule"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/1c6014bbb8cde113fca14b1e41ba8ace/nuget-populate-mkdir.rule"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/1c6014bbb8cde113fca14b1e41ba8ace/nuget-populate-patch.rule"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/1c6014bbb8cde113fca14b1e41ba8ace/nuget-populate-test.rule"
+		},
+		{
+			"file" : "D:/UrbanTraffic/app/noise_mapper/build/windows/x64/_deps/nuget-subbuild/CMakeFiles/1c6014bbb8cde113fca14b1e41ba8ace/nuget-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"nuget-populate"
+		],
+		"name" : "nuget-populate"
+	}
+}

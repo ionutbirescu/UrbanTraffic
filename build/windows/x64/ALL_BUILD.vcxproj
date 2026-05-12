@@ -153,6 +153,14 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{A43D9447-D0FF-3885-A667-CEAF5862BBE8}</Project>
       <Name>noise_mapper</Name>
     </ProjectReference>
+    <ProjectReference Include="D:\UrbanTraffic\app\noise_mapper\build\windows\x64\plugins\permission_handler_windows\permission_handler_windows_plugin.vcxproj">
+      <Project>{E113721C-5F0A-3C50-9C89-58A4194F0A79}</Project>
+      <Name>permission_handler_windows_plugin</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\UrbanTraffic\app\noise_mapper\build\windows\x64\plugins\record_windows\record_windows_plugin.vcxproj">
+      <Project>{8CF19ACF-C3E0-331C-A785-587A3591E18B}</Project>
+      <Name>record_windows_plugin</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

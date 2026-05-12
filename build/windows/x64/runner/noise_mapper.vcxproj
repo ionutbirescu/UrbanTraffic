@@ -71,7 +71,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\permission_handler_windows\windows\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -94,10 +94,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_HAS_EXCEPTIONS=0;FLUTTER_VERSION=\"1.0.0+1\";FLUTTER_VERSION_MAJOR=1;FLUTTER_VERSION_MINOR=0;FLUTTER_VERSION_PATCH=0;FLUTTER_VERSION_BUILD=1;NOMINMAX;UNICODE;_UNICODE;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\permission_handler_windows\windows\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\permission_handler_windows\windows\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -105,7 +105,7 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>..\flutter\Debug\flutter_wrapper_app.lib;dwmapi.lib;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\flutter\Debug\flutter_wrapper_app.lib;dwmapi.lib;..\plugins\permission_handler_windows\Debug\permission_handler_windows_plugin.lib;..\plugins\record_windows\Debug\record_windows_plugin.lib;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -123,7 +123,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\permission_handler_windows\windows\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <DisableSpecificWarnings>"4100"</DisableSpecificWarnings>
@@ -147,10 +147,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_HAS_EXCEPTIONS=0;FLUTTER_VERSION=\"1.0.0+1\";FLUTTER_VERSION_MAJOR=1;FLUTTER_VERSION_MINOR=0;FLUTTER_VERSION_PATCH=0;FLUTTER_VERSION_BUILD=1;NOMINMAX;UNICODE;_UNICODE;CMAKE_INTDIR=\"Profile\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\permission_handler_windows\windows\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\permission_handler_windows\windows\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -158,7 +158,7 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>..\flutter\Profile\flutter_wrapper_app.lib;dwmapi.lib;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\flutter\Profile\flutter_wrapper_app.lib;dwmapi.lib;..\plugins\permission_handler_windows\Profile\permission_handler_windows_plugin.lib;..\plugins\record_windows\Profile\record_windows_plugin.lib;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -176,7 +176,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\permission_handler_windows\windows\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <DisableSpecificWarnings>"4100"</DisableSpecificWarnings>
@@ -200,10 +200,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_HAS_EXCEPTIONS=0;FLUTTER_VERSION=\"1.0.0+1\";FLUTTER_VERSION_MAJOR=1;FLUTTER_VERSION_MINOR=0;FLUTTER_VERSION_PATCH=0;FLUTTER_VERSION_BUILD=1;NOMINMAX;UNICODE;_UNICODE;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\permission_handler_windows\windows\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\UrbanTraffic\app\noise_mapper\windows;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\cpp_client_wrapper\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\permission_handler_windows\windows\include;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\.plugin_symlinks\record_windows\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -211,7 +211,7 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>..\flutter\Release\flutter_wrapper_app.lib;dwmapi.lib;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\flutter\Release\flutter_wrapper_app.lib;dwmapi.lib;..\plugins\permission_handler_windows\Release\permission_handler_windows_plugin.lib;..\plugins\record_windows\Release\record_windows_plugin.lib;D:\UrbanTraffic\app\noise_mapper\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -296,6 +296,14 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ProjectReference Include="D:\UrbanTraffic\app\noise_mapper\build\windows\x64\flutter\flutter_wrapper_app.vcxproj">
       <Project>{FC64D01A-C7B5-36CA-B5DB-AE20999D52F4}</Project>
       <Name>flutter_wrapper_app</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\UrbanTraffic\app\noise_mapper\build\windows\x64\plugins\permission_handler_windows\permission_handler_windows_plugin.vcxproj">
+      <Project>{E113721C-5F0A-3C50-9C89-58A4194F0A79}</Project>
+      <Name>permission_handler_windows_plugin</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\UrbanTraffic\app\noise_mapper\build\windows\x64\plugins\record_windows\record_windows_plugin.vcxproj">
+      <Project>{8CF19ACF-C3E0-331C-A785-587A3591E18B}</Project>
+      <Name>record_windows_plugin</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -8,3 +8,13 @@ D:/UrbanTraffic/app/noise_mapper/build/windows/x64/flutter/CMakeFiles/INSTALL.di
 D:/UrbanTraffic/app/noise_mapper/build/windows/x64/runner/CMakeFiles/noise_mapper.dir
 D:/UrbanTraffic/app/noise_mapper/build/windows/x64/runner/CMakeFiles/INSTALL.dir
 D:/UrbanTraffic/app/noise_mapper/build/windows/x64/runner/CMakeFiles/ALL_BUILD.dir
+D:/UrbanTraffic/app/noise_mapper/build/windows/x64/plugins/permission_handler_windows/CMakeFiles/permission_handler_windows_plugin.dir
+D:/UrbanTraffic/app/noise_mapper/build/windows/x64/plugins/permission_handler_windows/CMakeFiles/INSTALL.dir
+D:/UrbanTraffic/app/noise_mapper/build/windows/x64/plugins/permission_handler_windows/CMakeFiles/ALL_BUILD.dir
+D:/UrbanTraffic/app/noise_mapper/build/windows/x64/plugins/record_windows/CMakeFiles/record_windows_plugin.dir
+D:/UrbanTraffic/app/noise_mapper/build/windows/x64/plugins/record_windows/CMakeFiles/INSTALL.dir
+D:/UrbanTraffic/app/noise_mapper/build/windows/x64/plugins/record_windows/CMakeFiles/ALL_BUILD.dir
+D:/UrbanTraffic/app/noise_mapper/build/windows/x64/plugins/jni/CMakeFiles/INSTALL.dir
+D:/UrbanTraffic/app/noise_mapper/build/windows/x64/plugins/jni/CMakeFiles/ALL_BUILD.dir
+D:/UrbanTraffic/app/noise_mapper/build/windows/x64/plugins/jni/shared/CMakeFiles/INSTALL.dir
+D:/UrbanTraffic/app/noise_mapper/build/windows/x64/plugins/jni/shared/CMakeFiles/ALL_BUILD.dir
