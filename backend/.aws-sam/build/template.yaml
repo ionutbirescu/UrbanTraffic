@@ -78,6 +78,48 @@ Resources:
             Path: /upload-url
     Metadata:
       SamResourceId: GetUploadUrlFunction
+  WriteMetadataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${ProjectName}-write-metadata
+      CodeUri: WriteMetadataFunction
+      Handler: app.handler
+      Policies:
+      - DynamoDBWritePolicy:
+          TableName:
+            Ref: RecordingsTable
+      Events:
+        PostMetadata:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: HttpApi
+            Method: POST
+            Path: /metadata
+    Metadata:
+      SamResourceId: WriteMetadataFunction
+  ListRecordingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${ProjectName}-list-recordings
+      CodeUri: ListRecordingsFunction
+      Handler: app.handler
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: RecordingsTable
+      Events:
+        GetRecordings:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: HttpApi
+            Method: GET
+            Path: /recordings
+    Metadata:
+      SamResourceId: ListRecordingsFunction
   HelloS3InvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -124,6 +166,55 @@ Resources:
               Rules:
               - Name: prefix
                 Value: recordings/
+  BackendDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName:
+        Fn::Sub: ${ProjectName}-backend
+      DashboardBody:
+        Fn::Sub: "{\n  \"widgets\": [\n    {\n      \"type\": \"text\",\n      \"\
+          x\": 0, \"y\": 0, \"width\": 24, \"height\": 1,\n      \"properties\": {\n\
+          \        \"markdown\": \"# Urban Noise Mapping \u2014 Backend Health\"\n\
+          \      }\n    },\n    {\n      \"type\": \"metric\",\n      \"x\": 0, \"\
+          y\": 1, \"width\": 8, \"height\": 6,\n      \"properties\": {\n        \"\
+          title\": \"Lambda invocations\",\n        \"region\": \"${AWS::Region}\"\
+          ,\n        \"view\": \"timeSeries\",\n        \"stacked\": false,\n    \
+          \    \"metrics\": [\n          [ \"AWS/Lambda\", \"Invocations\", \"FunctionName\"\
+          , \"${ProjectName}-get-upload-url\" ],\n          [ \"...\", \"${ProjectName}-write-metadata\"\
+          \ ],\n          [ \"...\", \"${ProjectName}-hello-s3\" ]\n        ],\n \
+          \       \"period\": 60,\n        \"stat\": \"Sum\"\n      }\n    },\n  \
+          \  {\n      \"type\": \"metric\",\n      \"x\": 8, \"y\": 1, \"width\":\
+          \ 8, \"height\": 6,\n      \"properties\": {\n        \"title\": \"Lambda\
+          \ errors\",\n        \"region\": \"${AWS::Region}\",\n        \"view\":\
+          \ \"timeSeries\",\n        \"stacked\": false,\n        \"metrics\": [\n\
+          \          [ \"AWS/Lambda\", \"Errors\", \"FunctionName\", \"${ProjectName}-get-upload-url\"\
+          \ ],\n          [ \"...\", \"${ProjectName}-write-metadata\" ],\n      \
+          \    [ \"...\", \"${ProjectName}-hello-s3\" ]\n        ],\n        \"period\"\
+          : 60,\n        \"stat\": \"Sum\"\n      }\n    },\n    {\n      \"type\"\
+          : \"metric\",\n      \"x\": 16, \"y\": 1, \"width\": 8, \"height\": 6,\n\
+          \      \"properties\": {\n        \"title\": \"Lambda duration (avg ms)\"\
+          ,\n        \"region\": \"${AWS::Region}\",\n        \"view\": \"timeSeries\"\
+          ,\n        \"stacked\": false,\n        \"metrics\": [\n          [ \"AWS/Lambda\"\
+          , \"Duration\", \"FunctionName\", \"${ProjectName}-get-upload-url\" ],\n\
+          \          [ \"...\", \"${ProjectName}-write-metadata\" ],\n          [\
+          \ \"...\", \"${ProjectName}-hello-s3\" ]\n        ],\n        \"period\"\
+          : 60,\n        \"stat\": \"Average\"\n      }\n    },\n    {\n      \"type\"\
+          : \"metric\",\n      \"x\": 0, \"y\": 7, \"width\": 12, \"height\": 6,\n\
+          \      \"properties\": {\n        \"title\": \"API Gateway \u2014 requests\
+          \ & 4xx/5xx\",\n        \"region\": \"${AWS::Region}\",\n        \"view\"\
+          : \"timeSeries\",\n        \"stacked\": false,\n        \"metrics\": [\n\
+          \          [ \"AWS/ApiGateway\", \"Count\", \"ApiId\", \"${HttpApi}\" ],\n\
+          \          [ \".\", \"4xx\", \".\", \".\" ],\n          [ \".\", \"5xx\"\
+          , \".\", \".\" ]\n        ],\n        \"period\": 60,\n        \"stat\"\
+          : \"Sum\"\n      }\n    },\n    {\n      \"type\": \"metric\",\n      \"\
+          x\": 12, \"y\": 7, \"width\": 12, \"height\": 6,\n      \"properties\":\
+          \ {\n        \"title\": \"DynamoDB \u2014 read/write capacity\",\n     \
+          \   \"region\": \"${AWS::Region}\",\n        \"view\": \"timeSeries\",\n\
+          \        \"stacked\": false,\n        \"metrics\": [\n          [ \"AWS/DynamoDB\"\
+          , \"ConsumedReadCapacityUnits\", \"TableName\", \"${RecordingsTable}\" ],\n\
+          \          [ \".\", \"ConsumedWriteCapacityUnits\", \".\", \".\" ]\n   \
+          \     ],\n        \"period\": 60,\n        \"stat\": \"Sum\"\n      }\n\
+          \    }\n  ]\n}\n"
 Outputs:
   RecordingsBucketName:
     Description: S3 bucket for WAV uploads

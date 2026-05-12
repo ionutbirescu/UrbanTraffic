@@ -18,4 +18,22 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["GetUploadUrlFunction"]
 
+[function_build_definitions.145efa89-d3d4-45ff-944a-c003107ccea2]
+codeuri = "C:\\Users\\I769044\\Documents\\UrbanTraffic\\backend\\functions\\write_metadata"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "app.handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["WriteMetadataFunction"]
+
+[function_build_definitions.80420cf6-137c-4b0e-a297-605077ff9ca6]
+codeuri = "C:\\Users\\I769044\\Documents\\UrbanTraffic\\backend\\functions\\list_recordings"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "app.handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["ListRecordingsFunction"]
+
 [layer_build_definitions]

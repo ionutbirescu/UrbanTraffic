@@ -78,6 +78,43 @@ Resources:
             ApiId: !Ref HttpApi
             Method: GET
             Path: /upload-url
+    
+  
+  # Lambda: write recording metadata to DynamoDB (status=PENDING)
+  WriteMetadataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-write-metadata"
+      CodeUri: functions/write_metadata/
+      Handler: app.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref RecordingsTable
+      Events:
+        PostMetadata:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /metadata
+  
+  # Lambda: list recordings for a given device
+  ListRecordingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-list-recordings"
+      CodeUri: functions/list_recordings/
+      Handler: app.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref RecordingsTable
+      Events:
+        GetRecordings:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /recordings
 
   # Permission for S3 to invoke the Lambda
   HelloS3InvokePermission:
@@ -115,6 +152,111 @@ Resources:
                 Rules:
                   - Name: prefix
                     Value: recordings/
+
+
+  # CloudWatch dashboard for backend monitoring
+  BackendDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${ProjectName}-backend"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0, "y": 0, "width": 24, "height": 1,
+              "properties": {
+                "markdown": "# Urban Noise Mapping — Backend Health"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 1, "width": 8, "height": 6,
+              "properties": {
+                "title": "Lambda invocations",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                  [ "AWS/Lambda", "Invocations", "FunctionName", "${ProjectName}-get-upload-url" ],
+                  [ "...", "${ProjectName}-write-metadata" ],
+                  [ "...", "${ProjectName}-hello-s3" ]
+                ],
+                "period": 60,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8, "y": 1, "width": 8, "height": 6,
+              "properties": {
+                "title": "Lambda errors",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                  [ "AWS/Lambda", "Errors", "FunctionName", "${ProjectName}-get-upload-url" ],
+                  [ "...", "${ProjectName}-write-metadata" ],
+                  [ "...", "${ProjectName}-hello-s3" ]
+                ],
+                "period": 60,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16, "y": 1, "width": 8, "height": 6,
+              "properties": {
+                "title": "Lambda duration (avg ms)",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                  [ "AWS/Lambda", "Duration", "FunctionName", "${ProjectName}-get-upload-url" ],
+                  [ "...", "${ProjectName}-write-metadata" ],
+                  [ "...", "${ProjectName}-hello-s3" ]
+                ],
+                "period": 60,
+                "stat": "Average"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 7, "width": 12, "height": 6,
+              "properties": {
+                "title": "API Gateway — requests & 4xx/5xx",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                  [ "AWS/ApiGateway", "Count", "ApiId", "${HttpApi}" ],
+                  [ ".", "4xx", ".", "." ],
+                  [ ".", "5xx", ".", "." ]
+                ],
+                "period": 60,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 7, "width": 12, "height": 6,
+              "properties": {
+                "title": "DynamoDB — read/write capacity",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                  [ "AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${RecordingsTable}" ],
+                  [ ".", "ConsumedWriteCapacityUnits", ".", "." ]
+                ],
+                "period": 60,
+                "stat": "Sum"
+              }
+            }
+          ]
+        }
+    
+    
 
 Outputs:
   RecordingsBucketName:
