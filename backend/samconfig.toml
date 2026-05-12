@@ -1,0 +1,15 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "noise-mapper-backend"
+resolve_s3 = true
+s3_prefix = "noise-mapper-backend"
+region = "eu-central-1"
+profile = "noise-mapper-dev"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "ProjectName=\"noise-mapper\""
+image_repositories = []
+
+[default.global.parameters]
+region = "eu-central-1"

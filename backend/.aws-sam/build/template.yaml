@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Urban Noise Mapping - backend infrastructure
+Parameters:
+  ProjectName:
+    Type: String
+    Default: noise-mapper
+    Description: Used as a prefix for resource names
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 512
+    Architectures:
+    - x86_64
+    Environment:
+      Variables:
+        RECORDINGS_TABLE:
+          Ref: RecordingsTable
+        RECORDINGS_BUCKET:
+          Fn::Sub: ${ProjectName}-recordings-${AWS::AccountId}
+Resources:
+  RecordingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${ProjectName}-recordings
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: recording_id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: recording_id
+        KeyType: HASH
+  HelloS3Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${ProjectName}-hello-s3
+      CodeUri: HelloS3Function
+      Handler: app.handler
+    Metadata:
+      SamResourceId: HelloS3Function
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+        - '*'
+        AllowMethods:
+        - GET
+        - POST
+        - DELETE
+        - OPTIONS
+        AllowHeaders:
+        - '*'
+  GetUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${ProjectName}-get-upload-url
+      CodeUri: GetUploadUrlFunction
+      Handler: app.handler
+      Policies:
+      - Statement:
+        - Effect: Allow
+          Action:
+          - s3:PutObject
+          Resource:
+            Fn::Sub: arn:aws:s3:::${ProjectName}-recordings-${AWS::AccountId}/recordings/*
+      Events:
+        GetUploadUrl:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: HttpApi
+            Method: GET
+            Path: /upload-url
+    Metadata:
+      SamResourceId: GetUploadUrlFunction
+  HelloS3InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+        - HelloS3Function
+        - Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceAccount:
+        Ref: AWS::AccountId
+      SourceArn:
+        Fn::Sub: arn:aws:s3:::${ProjectName}-recordings-${AWS::AccountId}
+  RecordingsBucket:
+    Type: AWS::S3::Bucket
+    DependsOn: HelloS3InvokePermission
+    Properties:
+      BucketName:
+        Fn::Sub: ${ProjectName}-recordings-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+        - AllowedMethods:
+          - PUT
+          - GET
+          AllowedOrigins:
+          - '*'
+          AllowedHeaders:
+          - '*'
+          MaxAge: 3000
+      NotificationConfiguration:
+        LambdaConfigurations:
+        - Event: s3:ObjectCreated:*
+          Function:
+            Fn::GetAtt:
+            - HelloS3Function
+            - Arn
+          Filter:
+            S3Key:
+              Rules:
+              - Name: prefix
+                Value: recordings/
+Outputs:
+  RecordingsBucketName:
+    Description: S3 bucket for WAV uploads
+    Value:
+      Ref: RecordingsBucket
+  RecordingsTableName:
+    Description: DynamoDB table for recordings
+    Value:
+      Ref: RecordingsTable
+  HelloS3FunctionArn:
+    Description: ARN of the hello-world S3 Lambda
+    Value:
+      Fn::GetAtt:
+      - HelloS3Function
+      - Arn
+  HttpApiUrl:
+    Description: Base URL of the HTTP API
+    Value:
+      Fn::Sub: https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
