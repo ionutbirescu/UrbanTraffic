@@ -25,3 +25,7 @@ ios/Flutter/Flutter.podspec
 
 # Generated
 *.lock
+
+# API keys & secrets
+.env
+lib/secrets.dart
