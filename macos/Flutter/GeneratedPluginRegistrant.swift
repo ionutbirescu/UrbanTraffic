@@ -5,8 +5,10 @@
 import FlutterMacOS
 import Foundation
 
-import record_darwin
+import geolocator_apple
+import record_macos
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
-  RecordPlugin.register(with: registry.registrar(forPlugin: "RecordPlugin"))
+  GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
+  RecordMacOsPlugin.register(with: registry.registrar(forPlugin: "RecordMacOsPlugin"))
 }
