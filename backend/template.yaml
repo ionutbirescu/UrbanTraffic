@@ -1,0 +1,273 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Urban Noise Mapping - backend infrastructure
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: noise-mapper
+    Description: Used as a prefix for resource names
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 512
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        RECORDINGS_TABLE: !Ref RecordingsTable
+        RECORDINGS_BUCKET: !Sub "${ProjectName}-recordings-${AWS::AccountId}"
+
+Resources:
+
+  # DynamoDB table for recording metadata + classification results
+  RecordingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-recordings"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: recording_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: recording_id
+          KeyType: HASH
+
+  # Hello-world Lambda (S3 trigger wired manually below to avoid circular deps)
+  HelloS3Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-hello-s3"
+      CodeUri: functions/hello_s3/
+      Handler: app.handler
+    
+    # HTTP API Gateway (single API for all endpoints)
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - GET
+          - POST
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - "*"
+
+  # Lambda: generate a presigned S3 upload URL
+  GetUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-get-upload-url"
+      CodeUri: functions/get_upload_url/
+      Handler: app.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub "arn:aws:s3:::${ProjectName}-recordings-${AWS::AccountId}/recordings/*"
+      Events:
+        GetUploadUrl:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /upload-url
+    
+  
+  # Lambda: write recording metadata to DynamoDB (status=PENDING)
+  WriteMetadataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-write-metadata"
+      CodeUri: functions/write_metadata/
+      Handler: app.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref RecordingsTable
+      Events:
+        PostMetadata:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /metadata
+  
+  # Lambda: list recordings for a given device
+  ListRecordingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-list-recordings"
+      CodeUri: functions/list_recordings/
+      Handler: app.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref RecordingsTable
+      Events:
+        GetRecordings:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /recordings
+
+  # Permission for S3 to invoke the Lambda
+  HelloS3InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt HelloS3Function.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !Sub "arn:aws:s3:::${ProjectName}-recordings-${AWS::AccountId}"
+
+  # S3 bucket for raw WAV recordings (notification wired here)
+  RecordingsBucket:
+    Type: AWS::S3::Bucket
+    DependsOn: HelloS3InvokePermission
+    Properties:
+      BucketName: !Sub "${ProjectName}-recordings-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [PUT, GET]
+            AllowedOrigins: ["*"]
+            AllowedHeaders: ["*"]
+            MaxAge: 3000
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt HelloS3Function.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: recordings/
+
+
+  # CloudWatch dashboard for backend monitoring
+  BackendDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${ProjectName}-backend"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0, "y": 0, "width": 24, "height": 1,
+              "properties": {
+                "markdown": "# Urban Noise Mapping — Backend Health"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 1, "width": 8, "height": 6,
+              "properties": {
+                "title": "Lambda invocations",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                  [ "AWS/Lambda", "Invocations", "FunctionName", "${ProjectName}-get-upload-url" ],
+                  [ "...", "${ProjectName}-write-metadata" ],
+                  [ "...", "${ProjectName}-hello-s3" ]
+                ],
+                "period": 60,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8, "y": 1, "width": 8, "height": 6,
+              "properties": {
+                "title": "Lambda errors",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                  [ "AWS/Lambda", "Errors", "FunctionName", "${ProjectName}-get-upload-url" ],
+                  [ "...", "${ProjectName}-write-metadata" ],
+                  [ "...", "${ProjectName}-hello-s3" ]
+                ],
+                "period": 60,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16, "y": 1, "width": 8, "height": 6,
+              "properties": {
+                "title": "Lambda duration (avg ms)",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                  [ "AWS/Lambda", "Duration", "FunctionName", "${ProjectName}-get-upload-url" ],
+                  [ "...", "${ProjectName}-write-metadata" ],
+                  [ "...", "${ProjectName}-hello-s3" ]
+                ],
+                "period": 60,
+                "stat": "Average"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 7, "width": 12, "height": 6,
+              "properties": {
+                "title": "API Gateway — requests & 4xx/5xx",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                  [ "AWS/ApiGateway", "Count", "ApiId", "${HttpApi}" ],
+                  [ ".", "4xx", ".", "." ],
+                  [ ".", "5xx", ".", "." ]
+                ],
+                "period": 60,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 7, "width": 12, "height": 6,
+              "properties": {
+                "title": "DynamoDB — read/write capacity",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                  [ "AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${RecordingsTable}" ],
+                  [ ".", "ConsumedWriteCapacityUnits", ".", "." ]
+                ],
+                "period": 60,
+                "stat": "Sum"
+              }
+            }
+          ]
+        }
+    
+    
+
+Outputs:
+  RecordingsBucketName:
+    Description: S3 bucket for WAV uploads
+    Value: !Ref RecordingsBucket
+  RecordingsTableName:
+    Description: DynamoDB table for recordings
+    Value: !Ref RecordingsTable
+  HelloS3FunctionArn:
+    Description: ARN of the hello-world S3 Lambda
+    Value: !GetAtt HelloS3Function.Arn
+  HttpApiUrl:
+    Description: Base URL of the HTTP API
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
