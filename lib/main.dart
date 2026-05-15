@@ -52,6 +52,7 @@ class _RecordScreenState extends State<RecordScreen> {
   late final AudioRecorder _audioRecorder;
 
   Timer? _timer;
+  Timer? _uiRefreshTimer;
   int _recordDuration = 0;
   String _fileSize = '0 KB';
 
@@ -59,40 +60,50 @@ class _RecordScreenState extends State<RecordScreen> {
   DateTime? _recordedAt;
   String? _lastFilePath;
   WeatherData? _lastWeather;
+  DateTime? _positionCapturedAt;
 
   String _locationString = 'Waiting...';
   String _weatherString = 'Waiting...';
 
-  // Network & identity
   final Dio _dio = Dio();
   String? _deviceId;
 
-  // API Gateway endpoint
   static const String _apiBaseUrl =
       'https://xc2v8ify10.execute-api.eu-central-1.amazonaws.com';
+
+  String _timeAgo(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
 
   @override
   void initState() {
     super.initState();
     _audioRecorder = AudioRecorder();
 
-    // Timeout-uri rezonabile pentru rețele mobile
+    _uiRefreshTimer = Timer.periodic(const Duration(seconds: 30), (t) {
+      if (mounted) setState(() {});
+    });
+
     _dio.options.connectTimeout = const Duration(seconds: 10);
     _dio.options.receiveTimeout = const Duration(seconds: 30);
     _dio.options.sendTimeout = const Duration(seconds: 60);
 
     _loadOrCreateDeviceId();
+
+
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _uiRefreshTimer?.cancel();
     _audioRecorder.dispose();
     super.dispose();
   }
-
-  /// Salvează/încarcă device_id-ul persistat - acelasi UUID pe tot device-ul,
-  /// indiferent câte ori se redeschide app-ul. Critic pentru History screen.
   Future<void> _loadOrCreateDeviceId() async {
     final prefs = await SharedPreferences.getInstance();
     String? id = prefs.getString('device_id');
@@ -108,9 +119,6 @@ class _RecordScreenState extends State<RecordScreen> {
     }
   }
 
-  // ============================================================
-  // GPS
-  // ============================================================
   Future<Position?> _captureLocation() async {
     setState(() => _locationString = 'Getting GPS...');
 
@@ -147,6 +155,7 @@ class _RecordScreenState extends State<RecordScreen> {
       setState(() {
         _locationString =
         '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
+        _positionCapturedAt = DateTime.now();
       });
 
       return position;
@@ -157,9 +166,6 @@ class _RecordScreenState extends State<RecordScreen> {
     }
   }
 
-  // ============================================================
-  // Weather
-  // ============================================================
   Future<WeatherData?> _captureWeather(Position position) async {
     setState(() => _weatherString = 'Fetching...');
 
@@ -177,9 +183,6 @@ class _RecordScreenState extends State<RecordScreen> {
     return weather;
   }
 
-  // ============================================================
-  // Dialoge GPS
-  // ============================================================
   void _showLocationServiceDialog() {
     showDialog(
       context: context,
@@ -209,21 +212,21 @@ class _RecordScreenState extends State<RecordScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Permisiune refuzată permanent'),
+        title: const Text('Permission denied permanently'),
         content: const Text(
-          'Ai blocat permisiunea de locație. Deschide setările și activeaz-o manual.',
+          'You blocked location permission. Open settings and enable it manually.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Anulează'),
+            child: const Text('Cancek'),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               openAppSettings();
             },
-            child: const Text('Deschide setări'),
+            child: const Text('Open settings'),
           ),
         ],
       ),
@@ -240,7 +243,7 @@ class _RecordScreenState extends State<RecordScreen> {
       WeatherData? weather,
       ) async {
     if (_deviceId == null) {
-      debugPrint('Upload anulat: device_id nu e încă disponibil.');
+      debugPrint('Upload cancelled: device_id is not available.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Device not ready, try again')),
@@ -252,9 +255,11 @@ class _RecordScreenState extends State<RecordScreen> {
     setState(() => _isUploading = true);
 
     try {
-      // 1. Cere presigned URL
-      debugPrint('1/3 Cerem presigned URL...');
-      final urlResponse = await _dio.get('$_apiBaseUrl/upload-url');
+      debugPrint('1/3 Asking for presigned URL...');
+      final urlResponse = await _dio.get(
+        '$_apiBaseUrl/upload-url',
+        queryParameters: {'device_id': _deviceId},
+      );
 
       if (urlResponse.statusCode != 200) {
         throw Exception('upload-url returned ${urlResponse.statusCode}');
@@ -264,7 +269,6 @@ class _RecordScreenState extends State<RecordScreen> {
       final recordingId = urlResponse.data['recording_id'] as String;
       debugPrint('Got recording_id: $recordingId');
 
-      // 2. PUT fișierul WAV în S3
       debugPrint('2/3 Upload S3...');
       final putResponse = await _dio.put(
         presignedUrl,
@@ -281,8 +285,6 @@ class _RecordScreenState extends State<RecordScreen> {
         throw Exception('S3 PUT returned ${putResponse.statusCode}');
       }
 
-      // 3. POST metadata cu retry (PUT a reușit deja, fișierul e în S3 -
-      // dacă POST-ul eșuează am rămâne cu orfan în S3, deci merită retry)
       debugPrint('3/3 POST metadata...');
 
       final metadataPayload = <String, dynamic>{
@@ -301,22 +303,21 @@ class _RecordScreenState extends State<RecordScreen> {
 
       await _postMetadataWithRetry(metadataPayload);
 
-      debugPrint('✅ SUCCES! Datele au ajuns în AWS.');
+      debugPrint('Succes uploading to AWS!');
 
-      // 4. Curățăm fișierul local - e deja în S3
       try {
         if (await audioFile.exists()) {
           await audioFile.delete();
-          debugPrint('Local WAV șters: ${audioFile.path}');
+          debugPrint('Local WAV deleted: ${audioFile.path}');
         }
       } catch (e) {
-        debugPrint('Nu am putut șterge fișierul local: $e');
+        debugPrint('Couldn\'t delete local file: $e');
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Upload successful! Processing on AWS...'),
+            content: Text('Upload successful! Processing on AWS...'),
             backgroundColor: Colors.green,
           ),
         );
@@ -349,8 +350,6 @@ class _RecordScreenState extends State<RecordScreen> {
     }
   }
 
-  /// Retry exponențial pentru POST /metadata - PUT-ul reușise deja, fișierul e
-  /// în S3, deci e bine să încercăm mai mult timp decât să rămânem cu orfani.
   Future<void> _postMetadataWithRetry(Map<String, dynamic> payload) async {
     const maxRetries = 3;
     int retries = 0;
@@ -365,29 +364,58 @@ class _RecordScreenState extends State<RecordScreen> {
       } catch (e) {
         retries++;
         if (retries >= maxRetries) {
-          debugPrint('Metadata POST a eșuat după $maxRetries încercări');
+          debugPrint('Metadata POST failed after $maxRetries tries');
           rethrow;
         }
         final delay = Duration(seconds: retries * 2);
-        debugPrint('Metadata POST eșuat, retry $retries în ${delay.inSeconds}s');
+        debugPrint('Metadata POST failed, retry $retries in ${delay.inSeconds}s');
         await Future.delayed(delay);
       }
     }
   }
 
-  // ============================================================
-  // Navigare
-  // ============================================================
   Future<void> _openMap() async {
-    Position? position = _lastPosition;
+    // Apăsarea butonului FORȚEAZĂ recapturarea GPS-ului
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Refreshing GPS...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
+
+    final position = await _captureLocation();
+    if (mounted && position != null) {
+      setState(() => _lastPosition = position);
+    }
 
     if (position == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Getting location...'),
-            duration: Duration(seconds: 2),
-          ),
+          const SnackBar(content: Text('Could not get location')),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MapScreen(position: position),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openWeather() async {
+    // Avem nevoie de o poziție - dacă lipsește, o capturăm
+    Position? position = _lastPosition;
+    if (position == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Getting location first...')),
         );
       }
       position = await _captureLocation();
@@ -405,55 +433,19 @@ class _RecordScreenState extends State<RecordScreen> {
       return;
     }
 
+    // FORȚEAZĂ recapturarea vremii (chiar dacă o avem deja)
     if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MapScreen(position: position!),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Refreshing weather...'),
+          duration: Duration(seconds: 1),
         ),
       );
     }
-  }
 
-  Future<void> _openWeather() async {
-    WeatherData? weather = _lastWeather;
-
-    if (weather == null) {
-      Position? position = _lastPosition;
-      if (position == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Getting location first...')),
-          );
-        }
-        position = await _captureLocation();
-        if (mounted && position != null) {
-          setState(() => _lastPosition = position);
-        }
-      }
-
-      if (position == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not get location')),
-          );
-        }
-        return;
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fetching weather...'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-
-      weather = await _captureWeather(position);
-      if (mounted && weather != null) {
-        setState(() => _lastWeather = weather);
-      }
+    final weather = await _captureWeather(position);
+    if (mounted && weather != null) {
+      setState(() => _lastWeather = weather);
     }
 
     if (weather == null) {
@@ -469,15 +461,12 @@ class _RecordScreenState extends State<RecordScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => WeatherScreen(weather: weather!),
+          builder: (_) => WeatherScreen(weather: weather),
         ),
       );
     }
   }
 
-  // ============================================================
-  // Recording
-  // ============================================================
   Future<void> _startRecording() async {
     try {
       var micStatus = await Permission.microphone.request();
@@ -507,24 +496,30 @@ class _RecordScreenState extends State<RecordScreen> {
         _isRecording = true;
         _recordDuration = 0;
         _fileSize = 'Recording...';
-        _locationString = 'Getting GPS...';
-        _weatherString = 'Waiting...';
         _recordedAt = timestamp;
         _lastFilePath = filePath;
-        _lastPosition = null;
-        _lastWeather = null;
       });
 
-      // GPS → vremea (vremea are nevoie de lat/lon)
-      _captureLocation().then((position) async {
-        if (!mounted || position == null) return;
-        setState(() => _lastPosition = position);
+      if (_lastPosition == null) {
+        _captureLocation().then((position) async {
+          if (!mounted || position == null) return;
+          setState(() => _lastPosition = position);
 
-        final weather = await _captureWeather(position);
-        if (mounted && weather != null) {
-          setState(() => _lastWeather = weather);
-        }
-      });
+          if (_lastWeather == null) {
+            final weather = await _captureWeather(position);
+            if (mounted && weather != null) {
+              setState(() => _lastWeather = weather);
+            }
+          }
+        });
+      } else if (_lastWeather == null) {
+        _captureWeather(_lastPosition!).then((weather) {
+          if (mounted && weather != null) {
+            setState(() => _lastWeather = weather);
+          }
+        });
+      }
+
 
       _startTimer();
     } catch (e) {
@@ -549,7 +544,6 @@ class _RecordScreenState extends State<RecordScreen> {
       final bytes = await file.length();
       final kb = (bytes / 1024).toStringAsFixed(1);
 
-      // Recording prea scurt → șterge fișierul, notifică, nu fa upload
       if (wasTooShort) {
         try {
           if (await file.exists()) await file.delete();
@@ -587,7 +581,6 @@ class _RecordScreenState extends State<RecordScreen> {
       debugPrint('File saved: $path');
       debugPrint('Timestamp: ${_recordedAt?.toIso8601String()}');
 
-      // Fallback GPS + vremea dacă nu au venit în paralel cu recording-ul
       if (_lastPosition == null) {
         final position = await _captureLocation();
         if (mounted && position != null) {
@@ -606,7 +599,6 @@ class _RecordScreenState extends State<RecordScreen> {
         }
       }
 
-      // Lansăm upload-ul (vremea e opțională - dacă a eșuat, mergem fără)
       if (_lastPosition != null && _recordedAt != null) {
         await _uploadDataToAWS(
           file,
@@ -615,7 +607,7 @@ class _RecordScreenState extends State<RecordScreen> {
           _lastWeather,
         );
       } else {
-        debugPrint('Upload anulat: lipsă GPS.');
+        debugPrint('Upload cancelled: missing GPS.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -635,23 +627,19 @@ class _RecordScreenState extends State<RecordScreen> {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
       setState(() => _recordDuration++);
-      // FĂRĂ stop automat - userul oprește când vrea, minim 10s.
     });
   }
 
-  // ============================================================
-  // UI
-  // ============================================================
   @override
   Widget build(BuildContext context) {
     String displayLocation = _locationString;
-    if (_lastPosition != null && !_isRecording) {
+    if (_lastPosition != null) {
       displayLocation =
       '${_lastPosition!.latitude.toStringAsFixed(4)}, ${_lastPosition!.longitude.toStringAsFixed(4)}';
     }
 
     String displayWeather = _weatherString;
-    if (_lastWeather != null && !_isRecording) {
+    if (_lastWeather != null) {
       displayWeather = '${_lastWeather!.temperature.toStringAsFixed(1)}°C';
     }
 
@@ -752,7 +740,7 @@ class _RecordScreenState extends State<RecordScreen> {
                     : null,
               ),
             ),
-            if (_lastPosition != null && !_isRecording) ...[
+            if (_lastPosition != null) ...[
               const SizedBox(height: 8),
               Text(
                 'GPS accuracy: ±${_lastPosition!.accuracy.toStringAsFixed(1)}m',
@@ -789,6 +777,9 @@ class _RecordScreenState extends State<RecordScreen> {
                         label: 'Location',
                         value: displayLocation,
                         tappable: true,
+                        subtitle: _positionCapturedAt != null
+                            ? _timeAgo(_positionCapturedAt!)
+                            : null,
                       ),
                     ),
                   ),
@@ -802,6 +793,9 @@ class _RecordScreenState extends State<RecordScreen> {
                         label: 'Weather',
                         value: displayWeather,
                         tappable: true,
+                        subtitle: _lastWeather != null
+                            ? _timeAgo(_lastWeather!.fetchedAt)
+                            : null,
                       ),
                     ),
                   ),
@@ -825,12 +819,14 @@ class _MetadataItem extends StatelessWidget {
   final String label;
   final String value;
   final bool tappable;
+  final String? subtitle;  // NOU
 
   const _MetadataItem({
     required this.icon,
     required this.label,
     required this.value,
     this.tappable = false,
+    this.subtitle,
   });
 
   @override
@@ -864,14 +860,24 @@ class _MetadataItem extends StatelessWidget {
           ),
           textAlign: TextAlign.center,
         ),
+        // NOU: timestamp în text mic, dacă există
+        if (subtitle != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            subtitle!,
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.orangeAccent.withValues(alpha: 0.8),
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ],
     );
   }
 }
 
-// ============================================================
-// Map Screen
-// ============================================================
 class MapScreen extends StatelessWidget {
   final Position position;
 
