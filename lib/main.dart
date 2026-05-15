@@ -246,7 +246,7 @@ class _RecordScreenState extends State<RecordScreen> {
       debugPrint('Upload cancelled: device_id is not available.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Device not ready, try again')),
+          const SnackBar(content: Text('Device not ready, please try again')),
         );
       }
       return;
@@ -255,21 +255,37 @@ class _RecordScreenState extends State<RecordScreen> {
     setState(() => _isUploading = true);
 
     try {
+      // 1. Get presigned URL
       debugPrint('1/3 Asking for presigned URL...');
       final urlResponse = await _dio.get(
         '$_apiBaseUrl/upload-url',
         queryParameters: {'device_id': _deviceId},
       );
 
+      debugPrint('Raw server response: ${urlResponse.data}');
+
       if (urlResponse.statusCode != 200) {
         throw Exception('upload-url returned ${urlResponse.statusCode}');
       }
 
-      final presignedUrl = urlResponse.data['uploadUrl'] as String;
-      final recordingId = urlResponse.data['recording_id'] as String;
+      final responseData = urlResponse.data;
+      if (responseData == null) throw Exception('Server responded, but body is empty.');
+
+      // Searching for the exact key your colleague used (upload_url)
+      final presignedUrl = responseData['upload_url'];
+      final recordingId = responseData['recording_id'];
+
+      if (presignedUrl == null) {
+        throw Exception('Could not find "upload_url" key in response.');
+      }
+      if (recordingId == null) {
+        throw Exception('Could not find "recording_id" key in response.');
+      }
+
       debugPrint('Got recording_id: $recordingId');
 
-      debugPrint('2/3 Upload S3...');
+      // 2. PUT the WAV file in S3
+      debugPrint('2/3 Uploading to S3...');
       final putResponse = await _dio.put(
         presignedUrl,
         data: audioFile.openRead(),
@@ -285,7 +301,8 @@ class _RecordScreenState extends State<RecordScreen> {
         throw Exception('S3 PUT returned ${putResponse.statusCode}');
       }
 
-      debugPrint('3/3 POST metadata...');
+      // 3. POST metadata (the file is already in S3, so we use retry if this fails)
+      debugPrint('3/3 Posting metadata...');
 
       final metadataPayload = <String, dynamic>{
         'device_id': _deviceId,
@@ -303,15 +320,16 @@ class _RecordScreenState extends State<RecordScreen> {
 
       await _postMetadataWithRetry(metadataPayload);
 
-      debugPrint('Succes uploading to AWS!');
+      debugPrint('✅ SUCCESS! Data successfully reached AWS.');
 
+      // 4. Clean up local file - it's already in S3 so we don't need it on the phone
       try {
         if (await audioFile.exists()) {
           await audioFile.delete();
           debugPrint('Local WAV deleted: ${audioFile.path}');
         }
       } catch (e) {
-        debugPrint('Couldn\'t delete local file: $e');
+        debugPrint('Could not delete local file: $e');
       }
 
       if (mounted) {
