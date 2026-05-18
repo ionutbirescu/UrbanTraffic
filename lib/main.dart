@@ -233,9 +233,6 @@ class _RecordScreenState extends State<RecordScreen> {
     );
   }
 
-  // ============================================================
-  // AWS Upload
-  // ============================================================
   Future<void> _uploadDataToAWS(
       File audioFile,
       Position gpsPosition,
@@ -255,7 +252,6 @@ class _RecordScreenState extends State<RecordScreen> {
     setState(() => _isUploading = true);
 
     try {
-      // 1. Get presigned URL
       debugPrint('1/3 Asking for presigned URL...');
       final urlResponse = await _dio.get(
         '$_apiBaseUrl/upload-url',
@@ -271,7 +267,6 @@ class _RecordScreenState extends State<RecordScreen> {
       final responseData = urlResponse.data;
       if (responseData == null) throw Exception('Server responded, but body is empty.');
 
-      // Searching for the exact key your colleague used (upload_url)
       final presignedUrl = responseData['upload_url'];
       final recordingId = responseData['recording_id'];
 
@@ -284,7 +279,6 @@ class _RecordScreenState extends State<RecordScreen> {
 
       debugPrint('Got recording_id: $recordingId');
 
-      // 2. PUT the WAV file in S3
       debugPrint('2/3 Uploading to S3...');
       final putResponse = await _dio.put(
         presignedUrl,
@@ -301,8 +295,7 @@ class _RecordScreenState extends State<RecordScreen> {
         throw Exception('S3 PUT returned ${putResponse.statusCode}');
       }
 
-      // 3. POST metadata (the file is already in S3, so we use retry if this fails)
-      debugPrint('3/3 Posting metadata...');
+     debugPrint('3/3 Posting metadata...');
 
       final metadataPayload = <String, dynamic>{
         'device_id': _deviceId,
@@ -322,8 +315,7 @@ class _RecordScreenState extends State<RecordScreen> {
 
       debugPrint('✅ SUCCESS! Data successfully reached AWS.');
 
-      // 4. Clean up local file - it's already in S3 so we don't need it on the phone
-      try {
+     try {
         if (await audioFile.exists()) {
           await audioFile.delete();
           debugPrint('Local WAV deleted: ${audioFile.path}');
@@ -393,8 +385,7 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   Future<void> _openMap() async {
-    // Apăsarea butonului FORȚEAZĂ recapturarea GPS-ului
-    if (mounted) {
+   if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Refreshing GPS...'),
@@ -428,7 +419,6 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   Future<void> _openWeather() async {
-    // Avem nevoie de o poziție - dacă lipsește, o capturăm
     Position? position = _lastPosition;
     if (position == null) {
       if (mounted) {
@@ -451,7 +441,6 @@ class _RecordScreenState extends State<RecordScreen> {
       return;
     }
 
-    // FORȚEAZĂ recapturarea vremii (chiar dacă o avem deja)
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -589,7 +578,6 @@ class _RecordScreenState extends State<RecordScreen> {
         return;
       }
 
-      // Recording valid
       setState(() {
         _isRecording = false;
         _fileSize = '$kb KB';
@@ -696,7 +684,7 @@ class _RecordScreenState extends State<RecordScreen> {
             const SizedBox(height: 48),
             GestureDetector(
               onTap: () {
-                if (_isUploading) return; // blocat în timpul upload-ului
+                if (_isUploading) return;
                 if (_isRecording) {
                   _stopRecording();
                 } else {
@@ -837,7 +825,7 @@ class _MetadataItem extends StatelessWidget {
   final String label;
   final String value;
   final bool tappable;
-  final String? subtitle;  // NOU
+  final String? subtitle;
 
   const _MetadataItem({
     required this.icon,
@@ -878,7 +866,6 @@ class _MetadataItem extends StatelessWidget {
           ),
           textAlign: TextAlign.center,
         ),
-        // NOU: timestamp în text mic, dacă există
         if (subtitle != null) ...[
           const SizedBox(height: 2),
           Text(
