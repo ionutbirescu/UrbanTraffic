@@ -74,8 +74,8 @@ Resources:
           Properties:
             ApiId:
               Ref: HttpApi
-            Method: GET
             Path: /upload-url
+            Method: GET
     Metadata:
       SamResourceId: GetUploadUrlFunction
   WriteMetadataFunction:
@@ -120,6 +120,34 @@ Resources:
             Path: /recordings
     Metadata:
       SamResourceId: ListRecordingsFunction
+  GetRecordingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${ProjectName}-get-recording
+      CodeUri: GetRecordingFunction
+      Handler: get_recording.lambda_handler
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: RecordingsTable
+      Events:
+        GetRecording:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: HttpApi
+            Path: /recordings/{id}
+            Method: GET
+        GetResult:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: HttpApi
+            Path: /result/{id}
+            Method: GET
+    Metadata:
+      SamResourceId: GetRecordingFunction
   HelloS3InvokePermission:
     Type: AWS::Lambda::Permission
     Properties:

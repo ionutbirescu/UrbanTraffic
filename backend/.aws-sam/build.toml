@@ -36,4 +36,13 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["ListRecordingsFunction"]
 
+[function_build_definitions.96aa97de-1b91-4aa3-8bd2-6df340b0962a]
+codeuri = "C:\\Users\\I769044\\Documents\\UrbanTraffic\\backend\\functions\\get_recording"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "get_recording.lambda_handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["GetRecordingFunction"]
+
 [layer_build_definitions]
