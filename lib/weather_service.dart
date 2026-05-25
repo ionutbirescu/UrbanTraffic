@@ -45,20 +45,20 @@ class WeatherData {
     final condition = current['condition'] as Map<String, dynamic>;
 
     return WeatherData(
-      temperature: (current['temp_c'] as num).toDouble(),
-      feelsLike: (current['feelslike_c'] as num).toDouble(),
-      humidity: current['humidity'] as int,
-      windKph: (current['wind_kph'] as num).toDouble(),
-      windDirection: current['wind_dir'] as String,
-      precipitationMm: (current['precip_mm'] as num).toDouble(),
-      conditionText: condition['text'] as String,
-      conditionIcon: 'https:${condition['icon']}', // icon URL e fără schema
-      conditionCode: condition['code'] as int,
-      pressureMb: (current['pressure_mb'] as num).toDouble(),
-      uvIndex: (current['uv'] as num).toDouble(),
-      cloudCover: current['cloud'] as int,
-      visibilityKm: (current['vis_km'] as num).toDouble(),
-      localTime: location['localtime'] as String,
+      temperature: (current['temp_c'] as num?)?.toDouble() ?? 0.0,
+      feelsLike: (current['feelslike_c'] as num?)?.toDouble() ?? 0.0,
+      humidity: (current['humidity'] as num?)?.toInt() ?? 0,
+      windKph: (current['wind_kph'] as num?)?.toDouble() ?? 0.0,
+      windDirection: (current['wind_dir'] as String?) ?? 'N/A',
+      precipitationMm: (current['precip_mm'] as num?)?.toDouble() ?? 0.0,
+      conditionText: (condition['text'] as String?) ?? 'Unknown',
+      conditionIcon: 'https:${(condition['icon'] as String?) ?? ''}',
+      conditionCode: (condition['code'] as num?)?.toInt() ?? 0,
+      pressureMb: (current['pressure_mb'] as num?)?.toDouble() ?? 0.0,
+      uvIndex: (current['uv'] as num?)?.toDouble() ?? 0.0,
+      cloudCover: (current['cloud'] as num?)?.toInt() ?? 0,
+      visibilityKm: (current['vis_km'] as num?)?.toDouble() ?? 0.0,
+      localTime: (location['localtime'] as String?) ?? '',
       fetchedAt: DateTime.now(),
     );
   }
@@ -108,8 +108,8 @@ class WeatherService {
       );
 
       if (response.statusCode == 200) {
-        final json = jsonDecode(response.body) as Map<String, dynamic>;
-        return WeatherData.fromJson(json);
+        final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
+        return WeatherData.fromJson(jsonBody);
       } else {
         debugPrint('Weather API error ${response.statusCode}: ${response.body}');
         return null;
