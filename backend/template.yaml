@@ -22,6 +22,110 @@ Globals:
 
 Resources:
 
+  LambdaErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-lambda-errors"
+      AlarmDescription: "Any Lambda function returned an error"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${ProjectName}-write-metadata"
+ 
+  LambdaErrorsGetRecordingAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-lambda-errors-get-recording"
+      AlarmDescription: "GetRecording Lambda returned an error"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${ProjectName}-get-recording"
+ 
+  LambdaErrorsDeleteAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-lambda-errors-delete-recording"
+      AlarmDescription: "DeleteRecording Lambda returned an error"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${ProjectName}-delete-recording"
+ 
+  # Lambda duration — alert if any function takes > 10s (timeout is 30s)
+  LambdaDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-lambda-duration-high"
+      AlarmDescription: "Lambda p90 duration exceeded 10 seconds"
+      Namespace: AWS/Lambda
+      MetricName: Duration
+      ExtendedStatistic: p90
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${ProjectName}-get-recording"
+ 
+  # API Gateway 5xx errors
+  ApiGateway5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-api-5xx-errors"
+      AlarmDescription: "API Gateway returned 5xx errors"
+      Namespace: AWS/ApiGateway
+      MetricName: 5xx
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: ApiId
+          Value: !Ref HttpApi
+ 
+  # DynamoDB throttling
+  DynamoDBThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-dynamodb-throttles"
+      AlarmDescription: "DynamoDB requests are being throttled"
+      Namespace: AWS/DynamoDB
+      MetricName: ThrottledRequests
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: TableName
+          Value: !Ref RecordingsTable
   # DynamoDB table for recording metadata + classification results
   RecordingsTable:
     Type: AWS::DynamoDB::Table
@@ -139,6 +243,29 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /result/{id}
             Method: GET
+            
+
+  DeleteRecordingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-delete-recording"
+      CodeUri: functions/delete_recording/
+      Handler: delete_recording.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RecordingsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:DeleteObject
+              Resource: !Sub "arn:aws:s3:::${ProjectName}-recordings-${AWS::AccountId}/recordings/*"
+      Events:
+        DeleteRecording:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /recordings/{id}
+            Method: DELETE
 
   # Permission for S3 to invoke the Lambda
   HelloS3InvokePermission:
