@@ -10,7 +10,7 @@
   import 'package:dio/dio.dart';
   import 'package:uuid/uuid.dart';
   import 'package:shared_preferences/shared_preferences.dart';
-
+  import 'history_screen.dart';
   import 'weather_service.dart';
   import 'weather_screen.dart';
 
@@ -34,7 +34,60 @@
           ),
           scaffoldBackgroundColor: const Color(0xFF1E293B),
         ),
-        home: const RecordScreen(),
+        home: const MainNavigation(),
+      );
+    }
+  }
+
+  class MainNavigation extends StatefulWidget {
+    const MainNavigation({super.key});
+
+    @override
+    State<MainNavigation> createState() => _MainNavigationState();
+  }
+
+  class _MainNavigationState extends State<MainNavigation> {
+    int _index = 0;
+    String? _deviceId;
+
+    @override
+    void initState() {
+      super.initState();
+      _loadDeviceId();
+    }
+
+    Future<void> _loadDeviceId() async {
+      final prefs = await SharedPreferences.getInstance();
+      String? id = prefs.getString('device_id');
+      if (id == null) {
+        id = const Uuid().v4();
+        await prefs.setString('device_id', id);
+      }
+      if (mounted) setState(() => _deviceId = id);
+    }
+
+    @override
+    Widget build(BuildContext context) {
+      // Wait until we know the device id before showing tabs that need it.
+      if (_deviceId == null) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
+
+      final screens = [
+        const RecordScreen(),
+        HistoryScreen(deviceId: _deviceId!),
+      ];
+
+      return Scaffold(
+        body: IndexedStack(index: _index, children: screens),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.mic), label: 'Record'),
+            NavigationDestination(icon: Icon(Icons.history), label: 'History'),
+          ],
+        ),
       );
     }
   }
