@@ -23,7 +23,6 @@ class WeatherScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Card principal cu temperatura
             Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
@@ -46,7 +45,6 @@ class WeatherScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Icon de la weatherapi
                   Image.network(
                     weather.conditionIcon,
                     width: 100,
@@ -87,7 +85,6 @@ class WeatherScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Grid cu detalii
             const Text(
               'Details',
               style: TextStyle(

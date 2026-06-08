@@ -68,7 +68,6 @@
 
     @override
     Widget build(BuildContext context) {
-      // Wait until we know the device id before showing tabs that need it.
       if (_deviceId == null) {
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
@@ -240,21 +239,20 @@
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('GPS dezactivat'),
+          title: const Text('GPS inactivated'),
           content: const Text(
-            'Activează serviciul de localizare al telefonului ca să poți înregistra punctele pe hartă.',
-          ),
+            ' Please, activate the GPS on your phone in order to be able to record your location too!'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Anulează'),
+              child: const Text('Abort'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pop(ctx);
                 Geolocator.openLocationSettings();
               },
-              child: const Text('Deschide setări'),
+              child: const Text('Open settings'),
             ),
           ],
         ),
@@ -272,7 +270,7 @@
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancek'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
@@ -366,7 +364,7 @@
 
         await _postMetadataWithRetry(metadataPayload);
 
-        debugPrint('✅ SUCCESS! Data successfully reached AWS.');
+        debugPrint('SUCCESS! Data successfully reached AWS.');
 
        try {
           if (await audioFile.exists()) {

@@ -1,5 +1,3 @@
-// Thin wrapper around the AWS HTTP API for fetching recordings.
-// Keeps all the networking in one place so the screens stay clean.
 
 import 'package:dio/dio.dart';
 import 'recording_model.dart';
@@ -15,7 +13,6 @@ class ApiService {
     _dio.options.receiveTimeout = const Duration(seconds: 20);
   }
 
-  // GET /recordings?device_id=...  -> newest-first list for this device.
   Future<List<Recording>> listRecordings(String deviceId) async {
     final resp = await _dio.get(
       '$_baseUrl/recordings',
@@ -33,19 +30,16 @@ class ApiService {
         .toList();
   }
 
-  // GET /recordings/{id}  -> full detail (weather, wrapped classification).
   Future<Recording> getRecording(String recordingId) async {
     final resp = await _dio.get('$_baseUrl/recordings/$recordingId');
     return Recording.fromJson(Map<String, dynamic>.from(resp.data));
   }
 
-  // GET /result/{id}  -> lightweight status poll.
   Future<Recording> getResult(String recordingId) async {
     final resp = await _dio.get('$_baseUrl/result/$recordingId');
     return Recording.fromJson(Map<String, dynamic>.from(resp.data));
   }
 
-  // DELETE /recordings/{id}
   Future<void> deleteRecording(String recordingId) async {
     await _dio.delete('$_baseUrl/recordings/$recordingId');
   }

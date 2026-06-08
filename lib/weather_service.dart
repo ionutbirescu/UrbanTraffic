@@ -2,20 +2,19 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-/// Model pentru datele meteo - structurat ca să fie ușor de trimis la AWS
 class WeatherData {
-  final double temperature; // Celsius
+  final double temperature;
   final double feelsLike;
-  final int humidity; // %
+  final int humidity;
   final double windKph;
-  final String windDirection; // N, NE, E, etc.
+  final String windDirection;
   final double precipitationMm;
-  final String conditionText; // "Sunny", "Cloudy", etc.
-  final String conditionIcon; // URL la icon
-  final int conditionCode; // pentru maparea proprie
+  final String conditionText;
+  final String conditionIcon;
+  final int conditionCode;
   final double pressureMb;
   final double uvIndex;
-  final int cloudCover; // %
+  final int cloudCover;
   final double visibilityKm;
   final String localTime;
   final DateTime fetchedAt;
@@ -38,7 +37,6 @@ class WeatherData {
     required this.fetchedAt,
   });
 
-  /// Parsează răspunsul JSON de la WeatherAPI
   factory WeatherData.fromJson(Map<String, dynamic> json) {
     final current = json['current'] as Map<String, dynamic>;
     final location = json['location'] as Map<String, dynamic>;
@@ -63,7 +61,6 @@ class WeatherData {
     );
   }
 
-  /// Pentru upload la AWS - format flat, ușor de pus în DynamoDB
   Map<String, dynamic> toMetadataJson() {
     return {
       'temp_c': temperature,
@@ -83,18 +80,15 @@ class WeatherData {
 }
 
 class WeatherService {
-  // ⚠️ Înlocuiește cu key-ul tău de pe weatherapi.com
   static const String _apiKey = '6d93692f26d04d4fa8f142534261305';
   static const String _baseUrl = 'https://api.weatherapi.com/v1';
 
-  /// Capturează datele meteo curente pentru o locație GPS.
-  /// Returnează null dacă apelul eșuează.
   static Future<WeatherData?> fetchWeather({
     required double latitude,
     required double longitude,
   }) async {
     if (_apiKey == 'YOUR_API_KEY_HERE' || _apiKey.isEmpty) {
-      debugPrint('⚠️ WeatherAPI key not configured!');
+      debugPrint(' WeatherAPI key not configured!');
       return null;
     }
 

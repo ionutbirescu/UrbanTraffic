@@ -1,6 +1,3 @@
-// History screen: shows this device's past recordings as a List and a Map.
-// Two tabs sharing the same data, fetched once on load and on pull-to-refresh.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -130,8 +127,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  List<List<Recording>> _clusterByLocation(List<Recording> located) {
+    const double thresholdMeters = 20.0;
+    final Distance distance = const Distance();
+    final List<List<Recording>> clusters = [];
+
+    for (final r in located) {
+      final point = LatLng(r.lat!, r.lon!);
+      bool added = false;
+      for (final cluster in clusters) {
+        final first = cluster.first;
+        final d = distance(LatLng(first.lat!, first.lon!), point);
+        if (d <= thresholdMeters) {
+          cluster.add(r);
+          added = true;
+          break;
+        }
+      }
+      if (!added) clusters.add([r]);
+    }
+    return clusters;
+  }
+
   Widget _buildMap() {
-    // Only recordings that actually have coordinates.
     final located = _recordings.where((r) => r.lat != null && r.lon != null).toList();
 
     if (located.isEmpty) {
@@ -140,7 +158,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     }
 
-    // Center the map on the most recent located recording.
+    final clusters = _clusterByLocation(located);
+
     final center = LatLng(located.first.lat!, located.first.lon!);
 
     return FlutterMap(
@@ -156,20 +175,55 @@ class _HistoryScreenState extends State<HistoryScreen> {
           userAgentPackageName: 'com.example.noise_mapper',
         ),
         MarkerLayer(
-          markers: located.map((r) {
-            final color = CategoryStyle.colorFor(r.dominantClass);
+          markers: clusters.map((cluster) {
+            final lead = cluster.first;
+            final color = CategoryStyle.colorFor(lead.dominantClass);
+            final showColor = lead.isDone && lead.hasScores;
             return Marker(
-              point: LatLng(r.lat!, r.lon!),
-              width: 44,
-              height: 44,
+              point: LatLng(lead.lat!, lead.lon!),
+              width: 54,
+              height: 54,
               child: GestureDetector(
-                onTap: () => _openDetail(r),
-                child: Icon(
-                  Icons.location_on,
-                  color: r.isDone && r.hasScores ? color : Colors.grey,
-                  size: 40,
-                  shadows: const [
-                    Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 2)),
+                onTap: () {
+                  if (cluster.length == 1) {
+                    _openDetail(cluster.first);
+                  } else {
+                    _showClusterSheet(cluster);
+                  }
+                },
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      color: showColor ? color : Colors.grey,
+                      size: 44,
+                      shadows: const [
+                        Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 2)),
+                      ],
+                    ),
+                    if (cluster.length > 1)
+                      Positioned(
+                        top: 0,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.black87,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                          child: Text(
+                            '${cluster.length}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -180,17 +234,59 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  void _showClusterSheet(List<Recording> cluster) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E293B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  '${cluster.length} recordings at this location',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: cluster.length,
+                  itemBuilder: (context, i) => _RecordingCard(
+                    recording: cluster[i],
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _openDetail(cluster[i]);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _openDetail(Recording r) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => DetailScreen(recordingId: r.recordingId),
       ),
-    ).then((_) => _load()); // refresh in case it was deleted
+    ).then((_) => _load());
   }
 }
 
-// A single recording row in the list.
 class _RecordingCard extends StatelessWidget {
   final Recording recording;
   final VoidCallback onTap;
@@ -219,7 +315,6 @@ class _RecordingCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              // Category icon badge
               Container(
                 width: 48,
                 height: 48,

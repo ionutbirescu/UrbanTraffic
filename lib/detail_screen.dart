@@ -4,6 +4,8 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
 
 import 'recording_model.dart';
@@ -130,8 +132,8 @@ class _DetailScreenState extends State<DetailScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text(_error!, style: const TextStyle(color: Colors.grey)))
-              : _buildContent(),
+          ? Center(child: Text(_error!, style: const TextStyle(color: Colors.grey)))
+          : _buildContent(),
     );
   }
 
@@ -171,24 +173,24 @@ class _DetailScreenState extends State<DetailScreen> {
       title: 'Classification',
       child: r.isPending
           ? const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Row(children: [
-                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                SizedBox(width: 12),
-                Text('Processing on AWS...', style: TextStyle(color: Colors.grey)),
-              ]),
-            )
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Row(children: [
+          SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+          SizedBox(width: 12),
+          Text('Processing on AWS...', style: TextStyle(color: Colors.grey)),
+        ]),
+      )
           : r.isError
-              ? const Text('Classification failed for this recording.',
-                  style: TextStyle(color: Colors.redAccent))
-              : !r.hasScores
-                  ? const Text('No clear sound detected (mostly silence).',
-                      style: TextStyle(color: Colors.grey))
-                  : Column(
-                      children: ['Traffic', 'Nature', 'Human', 'Construction']
-                          .map((cat) => _scoreBar(cat, r.scores[cat] ?? 0))
-                          .toList(),
-                    ),
+          ? const Text('Classification failed for this recording.',
+          style: TextStyle(color: Colors.redAccent))
+          : !r.hasScores
+          ? const Text('No clear sound detected (mostly silence).',
+          style: TextStyle(color: Colors.grey))
+          : Column(
+        children: ['Traffic', 'Nature', 'Human', 'Construction']
+            .map((cat) => _scoreBar(cat, r.scores[cat] ?? 0))
+            .toList(),
+      ),
     );
   }
 
@@ -259,10 +261,43 @@ class _DetailScreenState extends State<DetailScreen> {
     return _card(
       title: 'Location',
       child: hasLoc
-          ? Text(
-              '${r.lat!.toStringAsFixed(6)}, ${r.lon!.toStringAsFixed(6)}',
-              style: const TextStyle(fontSize: 14, color: Colors.white),
-            )
+          ? InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => _SingleRecordingMap(
+                lat: r.lat!,
+                lon: r.lon!,
+                category: r.dominantClass,
+                hasScores: r.isDone && r.hasScores,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              const Icon(Icons.map, size: 18, color: Colors.lightBlueAccent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '${r.lat!.toStringAsFixed(6)}, ${r.lon!.toStringAsFixed(6)}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.lightBlueAccent,
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.lightBlueAccent,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+            ],
+          ),
+        ),
+      )
           : const Text('No location data', style: TextStyle(color: Colors.grey)),
     );
   }
@@ -286,6 +321,70 @@ class _DetailScreenState extends State<DetailScreen> {
                   letterSpacing: 0.8)),
           const SizedBox(height: 12),
           child,
+        ],
+      ),
+    );
+  }
+}
+
+
+// A small full-screen map showing a single recording's location.
+class _SingleRecordingMap extends StatelessWidget {
+  final double lat;
+  final double lon;
+  final String category;
+  final bool hasScores;
+
+  const _SingleRecordingMap({
+    required this.lat,
+    required this.lon,
+    required this.category,
+    required this.hasScores,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final point = LatLng(lat, lon);
+    final color = hasScores ? CategoryStyle.colorFor(category) : Colors.grey;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Recording Location',
+            style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: 1.2)),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: FlutterMap(
+        options: MapOptions(
+          initialCenter: point,
+          initialZoom: 16.0,
+          minZoom: 3.0,
+          maxZoom: 18.0,
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.example.noise_mapper',
+          ),
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: point,
+                width: 60,
+                height: 60,
+                alignment: Alignment.topCenter,
+                child: Icon(
+                  Icons.location_on,
+                  color: color,
+                  size: 50,
+                  shadows: const [
+                    Shadow(color: Colors.black54, blurRadius: 6, offset: Offset(0, 2)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
