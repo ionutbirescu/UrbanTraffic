@@ -1,0 +1,10 @@
+{
+  "Records": [
+    {
+      "s3": {
+        "bucket": { "name": "noise-mapper-recordings-338375260957" },
+        "object": { "key": "recordings/03520b59-ab99-4f5d-9b4b-f43f74028817/1abfd892-960f-4bf0-ad3c-18eccd58698e.wav" }
+      }
+    }
+  ]
+}
