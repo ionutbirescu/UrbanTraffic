@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+// History screen: shows this device's past recordings as a List and a Map.
+// Two tabs sharing the same data, fetched once on load and on pull-to-refresh.
+
+>>>>>>> 0120550 (Update recording handling)
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -81,6 +87,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
+<<<<<<< HEAD
             ? _buildError()
             : TabBarView(
           children: [
@@ -88,6 +95,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
             _buildMap(),
           ],
         ),
+=======
+                ? _buildError()
+                : TabBarView(
+                    children: [
+                      _buildList(),
+                      _buildMap(),
+                    ],
+                  ),
+>>>>>>> 0120550 (Update recording handling)
       ),
     );
   }
@@ -127,6 +143,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+<<<<<<< HEAD
   List<List<Recording>> _clusterByLocation(List<Recording> located) {
     const double thresholdMeters = 20.0;
     final Distance distance = const Distance();
@@ -150,6 +167,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildMap() {
+=======
+  Widget _buildMap() {
+    // Only recordings that actually have coordinates.
+>>>>>>> 0120550 (Update recording handling)
     final located = _recordings.where((r) => r.lat != null && r.lon != null).toList();
 
     if (located.isEmpty) {
@@ -158,8 +179,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     }
 
+<<<<<<< HEAD
     final clusters = _clusterByLocation(located);
 
+=======
+    // Center the map on the most recent located recording.
+>>>>>>> 0120550 (Update recording handling)
     final center = LatLng(located.first.lat!, located.first.lon!);
 
     return FlutterMap(
@@ -175,6 +200,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           userAgentPackageName: 'com.example.noise_mapper',
         ),
         MarkerLayer(
+<<<<<<< HEAD
           markers: clusters.map((cluster) {
             final lead = cluster.first;
             final color = CategoryStyle.colorFor(lead.dominantClass);
@@ -224,6 +250,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         ),
                       ),
+=======
+          markers: located.map((r) {
+            final color = CategoryStyle.colorFor(r.dominantClass);
+            return Marker(
+              point: LatLng(r.lat!, r.lon!),
+              width: 44,
+              height: 44,
+              child: GestureDetector(
+                onTap: () => _openDetail(r),
+                child: Icon(
+                  Icons.location_on,
+                  color: r.isDone && r.hasScores ? color : Colors.grey,
+                  size: 40,
+                  shadows: const [
+                    Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 2)),
+>>>>>>> 0120550 (Update recording handling)
                   ],
                 ),
               ),
@@ -234,6 +276,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+<<<<<<< HEAD
   void _showClusterSheet(List<Recording> cluster) {
     showModalBottomSheet(
       context: context,
@@ -277,16 +320,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+=======
+>>>>>>> 0120550 (Update recording handling)
   void _openDetail(Recording r) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => DetailScreen(recordingId: r.recordingId),
       ),
+<<<<<<< HEAD
     ).then((_) => _load());
   }
 }
 
+=======
+    ).then((_) => _load()); // refresh in case it was deleted
+  }
+}
+
+// A single recording row in the list.
+>>>>>>> 0120550 (Update recording handling)
 class _RecordingCard extends StatelessWidget {
   final Recording recording;
   final VoidCallback onTap;
@@ -315,6 +368,10 @@ class _RecordingCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
+<<<<<<< HEAD
+=======
+              // Category icon badge
+>>>>>>> 0120550 (Update recording handling)
               Container(
                 width: 48,
                 height: 48,
@@ -390,4 +447,8 @@ class _RecordingCard extends StatelessWidget {
       ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 0120550 (Update recording handling)

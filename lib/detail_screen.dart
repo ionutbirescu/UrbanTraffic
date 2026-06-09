@@ -27,6 +27,10 @@ class _DetailScreenState extends State<DetailScreen> {
   String? _error;
   Timer? _pollTimer;
   int _pollCount = 0;
+<<<<<<< HEAD
+=======
+  bool _showRaw = false; // expand/collapse the raw YAMNet panel
+>>>>>>> 0120550 (Update recording handling)
 
   @override
   void initState() {
@@ -132,8 +136,13 @@ class _DetailScreenState extends State<DetailScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
+<<<<<<< HEAD
           ? Center(child: Text(_error!, style: const TextStyle(color: Colors.grey)))
           : _buildContent(),
+=======
+              ? Center(child: Text(_error!, style: const TextStyle(color: Colors.grey)))
+              : _buildContent(),
+>>>>>>> 0120550 (Update recording handling)
     );
   }
 
@@ -173,6 +182,7 @@ class _DetailScreenState extends State<DetailScreen> {
       title: 'Classification',
       child: r.isPending
           ? const Padding(
+<<<<<<< HEAD
         padding: EdgeInsets.symmetric(vertical: 12),
         child: Row(children: [
           SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
@@ -191,6 +201,86 @@ class _DetailScreenState extends State<DetailScreen> {
             .map((cat) => _scoreBar(cat, r.scores[cat] ?? 0))
             .toList(),
       ),
+=======
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Row(children: [
+                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                SizedBox(width: 12),
+                Text('Processing on AWS...', style: TextStyle(color: Colors.grey)),
+              ]),
+            )
+          : r.isError
+              ? const Text('Classification failed for this recording.',
+                  style: TextStyle(color: Colors.redAccent))
+              : !r.hasScores
+                  ? const Text('No clear sound detected (mostly silence).',
+                      style: TextStyle(color: Colors.grey))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ...['Traffic', 'Nature', 'Human', 'Construction']
+                            .map((cat) => _scoreBar(cat, r.scores[cat] ?? 0)),
+                        if (r.rawGuesses.isNotEmpty) _rawPanel(r),
+                      ],
+                    ),
+    );
+  }
+
+  // Expandable panel showing the top raw YAMNet detections.
+  Widget _rawPanel(Recording r) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        const Divider(color: Colors.white24, height: 1),
+        InkWell(
+          onTap: () => setState(() => _showRaw = !_showRaw),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  _showRaw ? Icons.expand_less : Icons.expand_more,
+                  size: 20,
+                  color: Colors.lightBlueAccent,
+                ),
+                const SizedBox(width: 6),
+                const Text(
+                  'What the AI heard (raw)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.lightBlueAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_showRaw)
+          ...r.rawGuesses.map((g) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        g.label,
+                        style: const TextStyle(fontSize: 13, color: Colors.white70),
+                      ),
+                    ),
+                    Text(
+                      '${g.score.toStringAsFixed(1)}%',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+      ],
+>>>>>>> 0120550 (Update recording handling)
     );
   }
 
@@ -231,7 +321,11 @@ class _DetailScreenState extends State<DetailScreen> {
       title: 'Weather at recording time',
       child: Column(
         children: [
+<<<<<<< HEAD
           if (w.tempC != null) _weatherRow(Icons.thermostat, 'Temperature', '${w.tempC!.toStringAsFixed(1)}Â°C'),
+=======
+          if (w.tempC != null) _weatherRow(Icons.thermostat, 'Temperature', '${w.tempC!.toStringAsFixed(1)}°C'),
+>>>>>>> 0120550 (Update recording handling)
           if (w.condition != null) _weatherRow(Icons.wb_cloudy, 'Condition', w.condition!),
           if (w.windKph != null) _weatherRow(Icons.air, 'Wind', '${w.windKph!.toStringAsFixed(1)} km/h ${w.windDir ?? ''}'),
           if (w.precipMm != null) _weatherRow(Icons.water_drop, 'Precipitation', '${w.precipMm!.toStringAsFixed(1)} mm'),
@@ -262,6 +356,7 @@ class _DetailScreenState extends State<DetailScreen> {
       title: 'Location',
       child: hasLoc
           ? InkWell(
+<<<<<<< HEAD
         onTap: () {
           Navigator.push(
             context,
@@ -298,6 +393,44 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
       )
+=======
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => _SingleRecordingMap(
+                      lat: r.lat!,
+                      lon: r.lon!,
+                      category: r.dominantClass,
+                      hasScores: r.isDone && r.hasScores,
+                    ),
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.map, size: 18, color: Colors.lightBlueAccent),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${r.lat!.toStringAsFixed(6)}, ${r.lon!.toStringAsFixed(6)}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.lightBlueAccent,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Colors.lightBlueAccent,
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+                  ],
+                ),
+              ),
+            )
+>>>>>>> 0120550 (Update recording handling)
           : const Text('No location data', style: TextStyle(color: Colors.grey)),
     );
   }

@@ -1,13 +1,33 @@
+<<<<<<< HEAD
+=======
+// Data model for a single recording, parsed from the AWS backend.
+//
+// The backend returns two slightly different shapes:
+//   • GET /recordings        -> classification is a flat map { Traffic: 0.0, ... }
+//   • GET /recordings/{id}    -> classification is wrapped { scores: {...}, top_class: "..." }
+// This model handles both so it works for the list AND the detail screen.
+
+>>>>>>> 0120550 (Update recording handling)
 class Recording {
   final String recordingId;
   final String? deviceId;
   final String timestamp;
+<<<<<<< HEAD
   final String status;
   final double? lat;
   final double? lon;
   final Map<String, double> scores;
   final String? topClass;
   final WeatherInfo? weather;
+=======
+  final String status; // PENDING | DONE | ERROR
+  final double? lat;
+  final double? lon;
+  final Map<String, double> scores; // Traffic / Nature / Human / Construction
+  final String? topClass;
+  final WeatherInfo? weather;
+  final List<RawGuess> rawGuesses;
+>>>>>>> 0120550 (Update recording handling)
 
   Recording({
     required this.recordingId,
@@ -19,14 +39,25 @@ class Recording {
     this.scores = const {},
     this.topClass,
     this.weather,
+<<<<<<< HEAD
+=======
+    this.rawGuesses = const [],
+>>>>>>> 0120550 (Update recording handling)
   });
 
   bool get isDone => status == 'DONE';
   bool get isPending => status == 'PENDING';
   bool get isError => status == 'ERROR';
 
+<<<<<<< HEAD
   bool get hasScores => scores.values.any((v) => v > 0);
 
+=======
+  // True only if we actually have non-zero classification data to show.
+  bool get hasScores => scores.values.any((v) => v > 0);
+
+  // The dominant category. Falls back to stored top_class, then computes from scores.
+>>>>>>> 0120550 (Update recording handling)
   String get dominantClass {
     if (topClass != null && topClass!.isNotEmpty) return topClass!;
     if (scores.isEmpty) return 'Unknown';
@@ -34,18 +65,30 @@ class Recording {
   }
 
   factory Recording.fromJson(Map<String, dynamic> json) {
+<<<<<<< HEAD
+=======
+    // --- classification can be flat or wrapped ---
+>>>>>>> 0120550 (Update recording handling)
     Map<String, double> parsedScores = {};
     String? parsedTopClass;
 
     final cls = json['classification'];
     if (cls is Map) {
       if (cls.containsKey('scores')) {
+<<<<<<< HEAD
+=======
+        // Wrapped shape (detail endpoint)
+>>>>>>> 0120550 (Update recording handling)
         final s = cls['scores'];
         if (s is Map) {
           s.forEach((k, v) => parsedScores[k.toString()] = _toDouble(v));
         }
         parsedTopClass = cls['top_class']?.toString();
       } else {
+<<<<<<< HEAD
+=======
+        // Flat shape (list endpoint)
+>>>>>>> 0120550 (Update recording handling)
         cls.forEach((k, v) => parsedScores[k.toString()] = _toDouble(v));
       }
     }
@@ -62,9 +105,22 @@ class Recording {
       weather: json['weather'] is Map
           ? WeatherInfo.fromJson(Map<String, dynamic>.from(json['weather']))
           : null,
+<<<<<<< HEAD
     );
   }
 
+=======
+      rawGuesses: (json['raw_guesses'] is List)
+          ? (json['raw_guesses'] as List)
+              .whereType<Map>()
+              .map((g) => RawGuess.fromJson(Map<String, dynamic>.from(g)))
+              .toList()
+          : const [],
+    );
+  }
+
+  // Backend sometimes sends numbers as strings (DynamoDB stringifies), so be defensive.
+>>>>>>> 0120550 (Update recording handling)
   static double _toDouble(dynamic v) {
     if (v == null) return 0.0;
     if (v is num) return v.toDouble();
@@ -72,6 +128,11 @@ class Recording {
   }
 }
 
+<<<<<<< HEAD
+=======
+// Weather metadata attached to a recording. All fields optional/defensive
+// because older recordings may not have every key.
+>>>>>>> 0120550 (Update recording handling)
 class WeatherInfo {
   final double? tempC;
   final String? condition;
@@ -105,3 +166,23 @@ class WeatherInfo {
     );
   }
 }
+<<<<<<< HEAD
+=======
+
+
+class RawGuess {
+  final String label;
+  final double score; // percentage
+
+  RawGuess({required this.label, required this.score});
+
+  factory RawGuess.fromJson(Map<String, dynamic> json) {
+    double toD(dynamic v) =>
+        v == null ? 0.0 : (v is num ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0);
+    return RawGuess(
+      label: json['label']?.toString() ?? 'Unknown',
+      score: toD(json['score']),
+    );
+  }
+}
+>>>>>>> 0120550 (Update recording handling)

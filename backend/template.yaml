@@ -10,7 +10,6 @@ Parameters:
 
 Globals:
   Function:
-    Runtime: python3.12
     Timeout: 30
     MemorySize: 512
     Architectures:
@@ -38,7 +37,7 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Sub "${ProjectName}-write-metadata"
- 
+
   LambdaErrorsGetRecordingAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -55,7 +54,7 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Sub "${ProjectName}-get-recording"
- 
+
   LambdaErrorsDeleteAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -72,8 +71,7 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Sub "${ProjectName}-delete-recording"
- 
-  # Lambda duration — alert if any function takes > 10s (timeout is 30s)
+
   LambdaDurationAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -90,8 +88,7 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Sub "${ProjectName}-get-recording"
- 
-  # API Gateway 5xx errors
+
   ApiGateway5xxAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -108,8 +105,7 @@ Resources:
       Dimensions:
         - Name: ApiId
           Value: !Ref HttpApi
- 
-  # DynamoDB throttling
+
   DynamoDBThrottleAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -126,6 +122,7 @@ Resources:
       Dimensions:
         - Name: TableName
           Value: !Ref RecordingsTable
+
   # DynamoDB table for recording metadata + classification results
   RecordingsTable:
     Type: AWS::DynamoDB::Table
@@ -139,15 +136,7 @@ Resources:
         - AttributeName: recording_id
           KeyType: HASH
 
-  # Hello-world Lambda (S3 trigger wired manually below to avoid circular deps)
-  HelloS3Function:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub "${ProjectName}-hello-s3"
-      CodeUri: functions/hello_s3/
-      Handler: app.handler
-    
-    # HTTP API Gateway (single API for all endpoints)
+  # HTTP API Gateway
   HttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -169,6 +158,7 @@ Resources:
       FunctionName: !Sub "${ProjectName}-get-upload-url"
       CodeUri: functions/get_upload_url/
       Handler: app.handler
+      Runtime: python3.12
       Policies:
         - Statement:
             - Effect: Allow
@@ -182,8 +172,7 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /upload-url
             Method: GET
-              
-  
+
   # Lambda: write recording metadata to DynamoDB (status=PENDING)
   WriteMetadataFunction:
     Type: AWS::Serverless::Function
@@ -191,6 +180,7 @@ Resources:
       FunctionName: !Sub "${ProjectName}-write-metadata"
       CodeUri: functions/write_metadata/
       Handler: app.handler
+      Runtime: python3.12
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref RecordingsTable
@@ -201,7 +191,7 @@ Resources:
             ApiId: !Ref HttpApi
             Method: POST
             Path: /metadata
-  
+
   # Lambda: list recordings for a given device
   ListRecordingsFunction:
     Type: AWS::Serverless::Function
@@ -209,6 +199,7 @@ Resources:
       FunctionName: !Sub "${ProjectName}-list-recordings"
       CodeUri: functions/list_recordings/
       Handler: app.handler
+      Runtime: python3.12
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref RecordingsTable
@@ -219,14 +210,15 @@ Resources:
             ApiId: !Ref HttpApi
             Method: GET
             Path: /recordings
-            
-            
+
+  # Lambda: get single recording + result polling
   GetRecordingFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${ProjectName}-get-recording"
       CodeUri: functions/get_recording/
       Handler: get_recording.lambda_handler
+      Runtime: python3.12
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref RecordingsTable
@@ -243,14 +235,15 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /result/{id}
             Method: GET
-            
 
+  # Lambda: delete a recording
   DeleteRecordingFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${ProjectName}-delete-recording"
       CodeUri: functions/delete_recording/
       Handler: delete_recording.lambda_handler
+      Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RecordingsTable
@@ -267,20 +260,44 @@ Resources:
             Path: /recordings/{id}
             Method: DELETE
 
-  # Permission for S3 to invoke the Lambda
-  HelloS3InvokePermission:
+  # ── ML Inference Lambda (Docker container) ───────────────────────────────────
+  InferenceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-inference"
+      PackageType: Image
+      ImageUri: !Sub "338375260957.dkr.ecr.eu-central-1.amazonaws.com/${ProjectName}-inference:latest"
+      Timeout: 120
+      MemorySize: 2048
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Sub "${ProjectName}-recordings-${AWS::AccountId}"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RecordingsTable
+
+  # Permission for S3 to invoke the Inference Lambda
+  InferenceInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !GetAtt HelloS3Function.Arn
+      FunctionName: !GetAtt InferenceFunction.Arn
       Action: lambda:InvokeFunction
       Principal: s3.amazonaws.com
       SourceAccount: !Ref AWS::AccountId
       SourceArn: !Sub "arn:aws:s3:::${ProjectName}-recordings-${AWS::AccountId}"
 
-  # S3 bucket for raw WAV recordings (notification wired here)
+  # Hello-world Lambda (kept but no longer triggered by S3)
+  HelloS3Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-hello-s3"
+      CodeUri: functions/hello_s3/
+      Handler: app.handler
+      Runtime: python3.12
+
+  # S3 bucket — now triggers InferenceFunction instead of HelloS3Function
   RecordingsBucket:
     Type: AWS::S3::Bucket
-    DependsOn: HelloS3InvokePermission
+    DependsOn: InferenceInvokePermission
     Properties:
       BucketName: !Sub "${ProjectName}-recordings-${AWS::AccountId}"
       PublicAccessBlockConfiguration:
@@ -297,13 +314,12 @@ Resources:
       NotificationConfiguration:
         LambdaConfigurations:
           - Event: s3:ObjectCreated:*
-            Function: !GetAtt HelloS3Function.Arn
+            Function: !GetAtt InferenceFunction.Arn
             Filter:
               S3Key:
                 Rules:
                   - Name: prefix
                     Value: recordings/
-
 
   # CloudWatch dashboard for backend monitoring
   BackendDashboard:
@@ -331,7 +347,7 @@ Resources:
                 "metrics": [
                   [ "AWS/Lambda", "Invocations", "FunctionName", "${ProjectName}-get-upload-url" ],
                   [ "...", "${ProjectName}-write-metadata" ],
-                  [ "...", "${ProjectName}-hello-s3" ]
+                  [ "...", "${ProjectName}-inference" ]
                 ],
                 "period": 60,
                 "stat": "Sum"
@@ -348,7 +364,7 @@ Resources:
                 "metrics": [
                   [ "AWS/Lambda", "Errors", "FunctionName", "${ProjectName}-get-upload-url" ],
                   [ "...", "${ProjectName}-write-metadata" ],
-                  [ "...", "${ProjectName}-hello-s3" ]
+                  [ "...", "${ProjectName}-inference" ]
                 ],
                 "period": 60,
                 "stat": "Sum"
@@ -365,7 +381,7 @@ Resources:
                 "metrics": [
                   [ "AWS/Lambda", "Duration", "FunctionName", "${ProjectName}-get-upload-url" ],
                   [ "...", "${ProjectName}-write-metadata" ],
-                  [ "...", "${ProjectName}-hello-s3" ]
+                  [ "...", "${ProjectName}-inference" ]
                 ],
                 "period": 60,
                 "stat": "Average"
@@ -406,10 +422,6 @@ Resources:
             }
           ]
         }
-        
-        
-    
-    
 
 Outputs:
   RecordingsBucketName:
@@ -418,9 +430,9 @@ Outputs:
   RecordingsTableName:
     Description: DynamoDB table for recordings
     Value: !Ref RecordingsTable
-  HelloS3FunctionArn:
-    Description: ARN of the hello-world S3 Lambda
-    Value: !GetAtt HelloS3Function.Arn
+  InferenceFunctionArn:
+    Description: ARN of the YAMNet inference Lambda
+    Value: !GetAtt InferenceFunction.Arn
   HttpApiUrl:
     Description: Base URL of the HTTP API
     Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"

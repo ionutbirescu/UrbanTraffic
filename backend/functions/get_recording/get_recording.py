@@ -25,7 +25,6 @@ def get_recording_item(recording_id):
 
 
 def shape_full(item):
-    """Full recording details — used by GET /recordings/{id}"""
     out = {
         "recording_id": item["recording_id"],
         "device_id":    item.get("device_id"),
@@ -43,11 +42,16 @@ def shape_full(item):
             "scores": raw,
             "top_class": top_class,
         }
+    if "raw_guesses" in item:
+        out["raw_guesses"] = decimal_to_float(item["raw_guesses"])
+    if "insight_groq" in item:
+        out["insight_groq"] = item["insight_groq"]
+    if "insight_gemini" in item:
+        out["insight_gemini"] = item["insight_gemini"]
     return out
 
 
 def shape_result(item):
-    """Lightweight polling response — used by GET /result/{id}"""
     out = {
         "recording_id": item["recording_id"],
         "status":       item.get("status"),
@@ -77,7 +81,6 @@ def lambda_handler(event, context):
     if not recording_id:
         return respond(400, {"error": "missing_recording_id"})
 
-    # Basic sanity check — recording IDs are UUIDs (36 chars) or similar
     if not isinstance(recording_id, str) or len(recording_id) < 8 or len(recording_id) > 64:
         return respond(400, {"error": "invalid_recording_id"})
 
