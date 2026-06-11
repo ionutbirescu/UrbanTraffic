@@ -26,7 +26,7 @@ table = dynamodb.Table(TABLE_NAME)
 GROQ_API_KEY   = os.environ.get("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GROQ_MODEL     = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
-GEMINI_MODEL   = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL   = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
 
 # ── Paths inside the container ───────────────────────────────────────────────
 MODEL_PATH = "/opt/yamnet.tflite"
@@ -179,6 +179,7 @@ def call_groq(prompt):
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {GROQ_API_KEY}",
+            "User-Agent": "Mozilla/5.0 (compatible; NoisMapper/1.0)",
         },
         method="POST",
     )
@@ -198,7 +199,10 @@ def call_gemini(prompt):
         return None
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"maxOutputTokens": 150, "temperature": 0.7},
+        "generationConfig": {
+            "maxOutputTokens": 500,
+            "temperature": 0.7,
+        },
     }).encode("utf-8")
     url = (
         f"https://generativelanguage.googleapis.com/v1beta/models/"
@@ -298,11 +302,13 @@ def lambda_handler(event, context):
             ":r": raw_decimal,
         }
         if insight_groq:
-            update_expr += ", insight_groq = :ig"
+            update_expr += ", insight_groq = :ig, insight_groq_model = :igm"
             expr_values[":ig"] = insight_groq
+            expr_values[":igm"] = GROQ_MODEL
         if insight_gemini:
-            update_expr += ", insight_gemini = :im"
+            update_expr += ", insight_gemini = :im, insight_gemini_model = :imm"
             expr_values[":im"] = insight_gemini
+            expr_values[":imm"] = GEMINI_MODEL
 
         table.update_item(
             Key={"recording_id": recording_id},

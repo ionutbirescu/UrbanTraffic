@@ -46,8 +46,12 @@ def shape_full(item):
         out["raw_guesses"] = decimal_to_float(item["raw_guesses"])
     if "insight_groq" in item:
         out["insight_groq"] = item["insight_groq"]
+    if "insight_groq_model" in item:
+        out["insight_groq_model"] = item["insight_groq_model"]
     if "insight_gemini" in item:
         out["insight_gemini"] = item["insight_gemini"]
+    if "insight_gemini_model" in item:
+        out["insight_gemini_model"] = item["insight_gemini_model"]
     return out
 
 
